@@ -1,0 +1,30 @@
+### Post Item
+POST http://127.0.0.1:8080/payment
+Content-Type: application/json
+
+{
+    "Amount":500,
+    "Currency":"USD",
+    "Status":"Pending"
+}
+
+
+### Get Item
+GET http://127.0.0.1:8080/payment/1
+
+### Get All Items
+GET http://127.0.0.1:8080/payment
+
+### Delete Item
+DELETE http://127.0.0.1:8080/payment/0
+
+### Update Item
+PUT http://127.0.0.1:8080/payment/-1
+Content-Type: application/json
+
+{
+    "Amount":999.9,
+    "Currency":"EUR",
+    "Status":"Completed"
+}
+

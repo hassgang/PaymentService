@@ -4,17 +4,17 @@ import (
 	"errors"
 
 	. "payment_api/internal/model"
+	"payment_api/pkg/db"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
 
 type PaymentPg struct {
-	db *sqlx.DB
+	db db.DB
 }
 
-func NewPaymentPg(db *sqlx.DB) PaymentRepo {
-	return &PaymentPg{db: db}
+func NewPaymentPg(database db.DB) PaymentRepo {
+	return &PaymentPg{db: database}
 }
 
 type PaymentRepo interface {

@@ -9,34 +9,37 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 type Handler struct {
 	service Service
+	log     *zap.Logger
 }
 
-func NewHandler(service Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service Service, log *zap.Logger) *Handler {
+	return &Handler{service: service, log: log}
 }
 
 func (h *Handler) HandlePost(w http.ResponseWriter, r *http.Request) {
+	h.log.Info("POST /payment")
 
 	var pCreate PaymentCreate
-
 	err := json.NewDecoder(r.Body).Decode(&pCreate)
-
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	payment, err := h.service.Create(&pCreate)
-
 	if errors.Is(err, ErrAlreadyExists) {
+		h.log.Error(err.Error())
 		http.Error(w, ErrAlreadyExists.Error(), http.StatusConflict)
 		return
 	}
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -47,21 +50,23 @@ func (h *Handler) HandlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) HandleDelete(w http.ResponseWriter, r *http.Request) {
-	id, err := parseId(r)
+	h.log.Info("DELETE /payment/{id}")
 
+	id, err := parseId(r)
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.service.Delete(int64(id))
 
+	err = h.service.Delete(id)
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-
 }
 
 func parseId(r *http.Request) (int64, error) {
@@ -74,45 +79,26 @@ func parseId(r *http.Request) (int64, error) {
 }
 
 func (h *Handler) HandleUpdate(w http.ResponseWriter, r *http.Request) {
+	h.log.Info("PUT /payment/{id}")
 
 	id, err := parseId(r)
-
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// var pUpdate Payment
 	var pUpdate PaymentUpdate
 	err = json.NewDecoder(r.Body).Decode(&pUpdate)
-
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	payment, err := h.service.Update(id, &pUpdate)
-
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(payment)
-	}
-}
-
-func (h *Handler) HandleGet(w http.ResponseWriter, r *http.Request) {
-
-	id, err := parseId(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	payment, err := h.service.Get(id)
-
-	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,14 +106,38 @@ func (h *Handler) HandleGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(payment)
-
 }
 
-func (h *Handler) HandleGetAll(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) HandleGet(w http.ResponseWriter, r *http.Request) {
+	h.log.Info("GET /payment/{id}")
+
+	id, err := parseId(r)
+	if err != nil {
+		h.log.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	payment, err := h.service.Get(id)
+	if err != nil {
+		h.log.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(payment)
+}
+
+func (h *Handler) HandleGetAll(w http.ResponseWriter, r *http.Request) {
+	h.log.Info("GET /payment")
 
 	payments, err := h.service.GetAll()
 	if err != nil {
+		h.log.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
